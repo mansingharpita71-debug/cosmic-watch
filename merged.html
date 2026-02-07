@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cosmic Watch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ===== MERGED CSS ===== -->
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #020024, #090979, #000);
+      color: white;
+      text-align: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-top: 20px;
+      color: #00d4ff;
+    }
+
+    button {
+      padding: 12px 22px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      background: #00d4ff;
+      color: black;
+      cursor: pointer;
+      margin: 20px;
+      transition: transform 0.2s;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+    }
+
+    /* ===== ASTEROID CARDS UI ===== */
+    #asteroids {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      padding: 30px;
+    }
+
+    .asteroid-card {
+      background: linear-gradient(145deg, #0f2027, #203a43, #2c5364);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .asteroid-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
+    }
+
+    .asteroid-card h3 {
+      margin: 0 0 10px;
+      color: #00d4ff;
+    }
+
+    .asteroid-card p {
+      margin: 6px 0;
+      font-size: 14px;
+    }
+
+    .hazard {
+      color: #ff4d4d;
+      font-weight: bold;
+    }
+
+    .safe {
+      color: #4dff88;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>☄️ Cosmic Watch</h1>
+  <button id="loadBtn">Load Today’s Asteroids</button>
+
+  <div id="asteroids"></div>
+
+  <!-- ===== MERGED JAVASCRIPT ===== -->
+  <script>
+    const NASA_API_KEY = "piJv73qi3b7tWXhpKeA3SskdrEt8Evc7hrvPiw6P";
+    const button = document.getElementById("loadBtn");
+    const container = document.getElementById("asteroids");
+
+    button.addEventListener("click", loadAsteroids);
+
+    async function loadAsteroids() {
+      container.innerHTML = "Loading asteroids... 🚀";
+
+      const today = new Date().toISOString().split("T")[0];
+      const url = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${today}&end_date=${today}&api_key=${NASA_API_KEY}`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        const asteroids = data.near_earth_objects[today];
+        container.innerHTML = "";
+
+        asteroids.forEach(a => {
+          const card = document.createElement("div");
+          card.className = "asteroid-card";
+
+          const diameter =
+            a.estimated_diameter.meters.estimated_diameter_max.toFixed(1);
+
+          const missDistance =
+            a.close_approach_data[0].miss_distance.kilometers;
+
+          const hazardous = a.is_potentially_hazardous_asteroid;
+
+          card.innerHTML = `
+            <h3>${a.name}</h3>
+            <p>☄️ Diameter: ${diameter} m</p>
+            <p>🌍 Miss Distance: ${Number(missDistance).toLocaleString()} km</p>
+            <p class="${hazardous ? "hazard" : "safe"}">
+              ${hazardous ? "⚠️ Potentially Hazardous" : "✅ Safe"}
+            </p>
+          `;
+
+          container.appendChild(card);
+        });
+
+      } catch (error) {
+        container.innerHTML = "❌ Failed to load asteroid data";
+        console.error(error);
+      }
+    }
+  </script>
+
+</body>
+</html>
