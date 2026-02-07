@@ -5,139 +5,283 @@
   <title>Cosmic Watch</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- ===== MERGED CSS ===== -->
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      margin: 0;
       font-family: Arial, sans-serif;
       background: radial-gradient(circle at top, #020024, #090979, #000);
       color: white;
-      text-align: center;
       min-height: 100vh;
     }
 
-    h1 {
-      margin-top: 20px;
-      color: #00d4ff;
+    /* ===== LOGIN ===== */
+    .login-page {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #667eea, #764ba2);
     }
 
-    button {
-      padding: 12px 22px;
-      font-size: 16px;
+    .login-container {
+      background: white;
+      padding: 40px;
       border-radius: 10px;
+      width: 100%;
+      max-width: 400px;
+      color: black;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 8px; font-weight: bold; }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 5px;
+      border: 2px solid #ddd;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    /* ===== DASHBOARD ===== */
+    .dashboard { display: none; text-align: center; }
+
+    h1 { margin: 20px; color: #00d4ff; }
+
+    button {
+      padding: 10px 18px;
+      margin: 10px;
+      border-radius: 8px;
       border: none;
       background: #00d4ff;
       color: black;
       cursor: pointer;
-      margin: 20px;
-      transition: transform 0.2s;
     }
 
-    button:hover {
-      transform: scale(1.05);
-    }
+    button:hover { transform: scale(1.05); }
 
-    /* ===== ASTEROID CARDS UI ===== */
     #asteroids {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 20px;
-      padding: 30px;
+      padding: 20px;
     }
 
     .asteroid-card {
       background: linear-gradient(145deg, #0f2027, #203a43, #2c5364);
-      border-radius: 16px;
-      padding: 18px;
-      box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
-      transition: transform 0.3s, box-shadow 0.3s;
+      padding: 15px;
+      border-radius: 14px;
+      box-shadow: 0 0 15px rgba(0,212,255,0.3);
     }
 
-    .asteroid-card:hover {
-      transform: translateY(-8px) scale(1.02);
-      box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
+    .hazard { color: #ff4d4d; font-weight: bold; }
+    .safe { color: #4dff88; font-weight: bold; }
+
+    /* ===== ORBIT SIM ===== */
+    #orbitCanvas {
+      background: black;
+      display: block;
+      margin: 20px auto;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,212,255,0.4);
     }
 
-    .asteroid-card h3 {
-      margin: 0 0 10px;
-      color: #00d4ff;
+    #orbitControls { margin: 10px; }
+    #orbitInfo { margin: 10px; color: #00d4ff; }
+
+    /* ===== STARS ===== */
+    .stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
     }
 
-    .asteroid-card p {
-      margin: 6px 0;
-      font-size: 14px;
+    .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: white;
+      border-radius: 50%;
+      animation: twinkle 3s infinite;
     }
 
-    .hazard {
-      color: #ff4d4d;
-      font-weight: bold;
-    }
-
-    .safe {
-      color: #4dff88;
-      font-weight: bold;
+    @keyframes twinkle {
+      0%,100%{opacity:.3} 50%{opacity:1}
     }
   </style>
 </head>
 
 <body>
 
+<!-- LOGIN -->
+<div class="login-page" id="loginPage">
+  <div class="login-container">
+    <h1>Cosmic Watch Login</h1>
+    <form id="loginForm">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" required>
+      </div>
+      <button class="login-btn">Login</button>
+    </form>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+  <div class="stars" id="starField"></div>
+
   <h1>☄️ Cosmic Watch</h1>
   <button id="loadBtn">Load Today’s Asteroids</button>
-
   <div id="asteroids"></div>
 
-  <!-- ===== MERGED JAVASCRIPT ===== -->
-  <script>
-    const NASA_API_KEY = "piJv73qi3b7tWXhpKeA3SskdrEt8Evc7hrvPiw6P";
-    const button = document.getElementById("loadBtn");
-    const container = document.getElementById("asteroids");
+  <h1>🪐 Orbital Simulator</h1>
+  <canvas id="orbitCanvas" width="800" height="600"></canvas>
 
-    button.addEventListener("click", loadAsteroids);
+  <div id="orbitControls">
+    <button id="pauseBtn">⏸ Pause</button>
+    <button id="resetBtn">🔄 Reset</button>
+    <button id="speedUpBtn">⏩ Speed +</button>
+    <button id="speedDownBtn">⏪ Speed -</button>
+    <button id="loadAsteroidsBtn">🪨 Load Asteroids</button>
+  </div>
 
-    async function loadAsteroids() {
-      container.innerHTML = "Loading asteroids... 🚀";
+  <div id="orbitInfo"><p>Orbital Simulator Ready</p></div>
+</div>
 
-      const today = new Date().toISOString().split("T")[0];
-      const url = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${today}&end_date=${today}&api_key=${NASA_API_KEY}`;
+<script>
+/* ===== LOGIN ===== */
+loginForm.addEventListener("submit", e => {
+  e.preventDefault();
+  loginPage.style.display = "none";
+  dashboard.style.display = "block";
+  createStarField();
+  initializeOrbitalSimulator();
+});
 
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
+/* ===== STARS ===== */
+function createStarField(){
+  for(let i=0;i<100;i++){
+    const s=document.createElement("div");
+    s.className="star";
+    s.style.left=Math.random()*100+"%";
+    s.style.top=Math.random()*100+"%";
+    starField.appendChild(s);
+  }
+}
 
-        const asteroids = data.near_earth_objects[today];
-        container.innerHTML = "";
+/* ===== NASA API ===== */
+const NASA_API_KEY="piJv73qi3b7tWXhpKeA3SskdrEt8Evc7hrvPiw6P";
+let allAsteroidsData=[];
 
-        asteroids.forEach(a => {
-          const card = document.createElement("div");
-          card.className = "asteroid-card";
+loadBtn.onclick=async()=>{
+  asteroids.innerHTML="Loading 🚀";
+  const today=new Date().toISOString().split("T")[0];
+  const res=await fetch(`https://api.nasa.gov/neo/rest/v1/feed?start_date=${today}&end_date=${today}&api_key=${NASA_API_KEY}`);
+  const data=await res.json();
+  allAsteroidsData=data.near_earth_objects[today];
+  asteroids.innerHTML="";
+  allAsteroidsData.forEach(a=>{
+    asteroids.innerHTML+=`
+      <div class="asteroid-card">
+        <h3>${a.name}</h3>
+        <p>Diameter: ${a.estimated_diameter.meters.estimated_diameter_max.toFixed(1)} m</p>
+        <p class="${a.is_potentially_hazardous_asteroid?"hazard":"safe"}">
+          ${a.is_potentially_hazardous_asteroid?"⚠ Hazardous":"✅ Safe"}
+        </p>
+      </div>`;
+  });
+};
 
-          const diameter =
-            a.estimated_diameter.meters.estimated_diameter_max.toFixed(1);
+/* ===== ORBIT SIMULATOR ===== */
+let canvas,ctx,bodies=[],isPaused=false,simulationSpeed=1;
+const G=0.5;
 
-          const missDistance =
-            a.close_approach_data[0].miss_distance.kilometers;
+class CelestialBody{
+  constructor(x,y,vx,vy,mass,radius,color,label,isAsteroid=false){
+    Object.assign(this,{x,y,vx,vy,mass,radius,color,label,isAsteroid,trail:[]});
+  }
+  update(){
+    bodies.forEach(b=>{
+      if(b===this)return;
+      const dx=b.x-this.x,dy=b.y-this.y;
+      const d=Math.sqrt(dx*dx+dy*dy)+1;
+      const f=G*this.mass*b.mass/(d*d);
+      this.vx+=f*dx/d/this.mass*simulationSpeed;
+      this.vy+=f*dy/d/this.mass*simulationSpeed;
+    });
+    this.x+=this.vx*simulationSpeed;
+    this.y+=this.vy*simulationSpeed;
+    this.trail.push({x:this.x,y:this.y});
+    if(this.trail.length>80)this.trail.shift();
+  }
+  draw(){
+    ctx.strokeStyle=this.color;
+    ctx.beginPath();
+    this.trail.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+    ctx.stroke();
+    ctx.fillStyle=this.color;
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.radius,0,Math.PI*2);
+    ctx.fill();
+  }
+}
 
-          const hazardous = a.is_potentially_hazardous_asteroid;
+function initializeOrbitalSimulator(){
+  canvas=orbitCanvas; ctx=canvas.getContext("2d");
+  bodies=[
+    new CelestialBody(400,300,0,0,1200,16,"#FFD700","Sun"),
+    new CelestialBody(250,300,0,-6,60,8,"#4169E1","Venus"),
+    new CelestialBody(550,300,0,5,80,9,"#FF6347","Mars")
+  ];
+  animate();
+}
 
-          card.innerHTML = `
-            <h3>${a.name}</h3>
-            <p>☄️ Diameter: ${diameter} m</p>
-            <p>🌍 Miss Distance: ${Number(missDistance).toLocaleString()} km</p>
-            <p class="${hazardous ? "hazard" : "safe"}">
-              ${hazardous ? "⚠️ Potentially Hazardous" : "✅ Safe"}
-            </p>
-          `;
+function animate(){
+  ctx.fillStyle="rgba(0,0,0,.2)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  if(!isPaused)bodies.forEach(b=>b.update());
+  bodies.forEach(b=>b.draw());
+  requestAnimationFrame(animate);
+}
 
-          container.appendChild(card);
-        });
+pauseBtn.onclick=()=>{isPaused=!isPaused;};
+resetBtn.onclick=initializeOrbitalSimulator;
+speedUpBtn.onclick=()=>simulationSpeed=Math.min(5,simulationSpeed+.5);
+speedDownBtn.onclick=()=>simulationSpeed=Math.max(.5,simulationSpeed-.5);
 
-      } catch (error) {
-        container.innerHTML = "❌ Failed to load asteroid data";
-        console.error(error);
-      }
-    }
-  </script>
+loadAsteroidsBtn.onclick=()=>{
+  allAsteroidsData.slice(0,20).forEach((a,i)=>{
+    const angle=i/20*Math.PI*2;
+    bodies.push(new CelestialBody(
+      400+Math.cos(angle)*200,
+      300+Math.sin(angle)*200,
+      -Math.sin(angle)*.8,
+      Math.cos(angle)*.8,
+      10,3,
+      a.is_potentially_hazardous_asteroid?"#FF4500":"#FFB347",
+      a.name,true
+    ));
+  });
+};
+</script>
 
 </body>
 </html>
